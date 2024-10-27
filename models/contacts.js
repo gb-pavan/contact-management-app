@@ -2,7 +2,17 @@ const db = require('../db/database');
 const user = require('../models/user')
 
 exports.addContact = async (user_mail,name,email,phone,address,timezone, callback) => {
-    const user_row = await user.findUserByEmail(user_mail);
+    // const user_row = await user.getUserByEmail(user_mail,()=>{});
+        const user_row = await new Promise((resolve, reject) => {
+        user.getUserByEmail(user_mail, (err, user) => {
+            if (err) {
+                reject(err); // Reject the promise if there's an error
+            } else {
+                resolve(user); // Resolve with the user row
+            }
+        });
+    });
+
     const query = `INSERT INTO contacts (user_id, name, email, phone, address, timezone, created_at, updated_at,is_deleted) VALUES (?, ?, ?, ?, ?, ?,CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,0)`;
     db.run(query, [user_row.id, name, email, phone, address, timezone], function(err) {
         callback(err, this);

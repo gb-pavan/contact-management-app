@@ -36,26 +36,26 @@ exports.createUser = async (email,hashedPassword,callback) => {
 };
 
 
-// // Function to fetch a user by username
-// exports.getUserByUsername = (email, callback) => {
-//     const query = `SELECT * FROM users WHERE email = ?`;
-//     db.get(query, [email], (err, user) => {
-//         callback(err, user);
-//     });
-// };
+// Function to fetch a user by username
+exports.getUserByEmail = (email, callback) => {
+    const query = `SELECT * FROM users WHERE email = ?`;
+    db.get(query, [email], (err, user) => {
+        callback(err, user);
+    });
+};
 
 // Find user by email in the database
-exports.findUserByEmail = (email) => {
-  console.log("email",email);
-  const query = `SELECT * FROM users WHERE email = ?`;
+// exports.findUserByEmail = (email) => {
+//   console.log("email",email);
+//   const query = `SELECT * FROM users WHERE email = ?`;
 
-  return new Promise((resolve, reject) => {
-    db.get(query, [email], (err, row) => {
-      if (err) return reject(err);
-      resolve(row);
-    });
-  });
-};
+//   return new Promise((resolve, reject) => {
+//     db.get(query, [email], (err, row) => {
+//       if (err) return reject(err);
+//       resolve(row);
+//     });
+//   });
+// };
 
 // Verify user by updating `isVerified` flag in the database
 exports.verifyUser = (email) => {

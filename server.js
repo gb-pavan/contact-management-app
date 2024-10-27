@@ -11,7 +11,6 @@ app.use(express.json());
 
 // Routes
 app.use('/auth', authRoutes);
-app.use('/transactions', transactionRoutes);
 app.use('/api/auth',authRoutes);
 app.use('/auth/forgot',authRoutes);
 app.use('/auth/reset',authRoutes);

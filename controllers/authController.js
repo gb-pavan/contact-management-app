@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const user = require('../models/user');
-const userSchema = require('../validators/userValidator');
+const {userSchema} = require('../validators/userValidator');
 const sendMail = require('../utils/emailService');
 const express = require('express');
 const crypto = require('crypto');
@@ -46,10 +46,11 @@ exports.register = async (req, res) => {
 exports.login = (req, res) => {
     const { email, password } = req.body;
 
-    user.getUserByUsername(email, async (err, user) => {
+    user.getUserByEmail(email, async (err, user) => {
         if (err || !user) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
+        console.log("user details",user);
 
         const isValidPassword = await bcrypt.compare(password, user.password);
         if (!isValidPassword) {
@@ -84,23 +85,30 @@ exports.sendOTP = async (req,res) => {
     const { email } = req.body;
 
   try {
-    const userRow = await user.findUserByEmail(email); // Assuming this function is implemented
+    await user.getUserByEmail(email,async (err, userRow) => {
+        if (err) {
+            return res.status(401).json({ error: err });
+        }
+        if (!userRow) {
+          return res.status(404).send('User not found.');
+        }
 
-    if (!userRow) {
-      return res.status(404).send('User not found.');
-    }
+            // Generate a one-time code (OTP)
+        const otp = crypto.randomInt(100000, 999999); // Generates a 6-digit OTP
+        const expiresAt = Date.now() + 3600000; // Set expiration time (1 hour)
 
-    // Generate a one-time code (OTP)
-    const otp = crypto.randomInt(100000, 999999); // Generates a 6-digit OTP
-    const expiresAt = Date.now() + 3600000; // Set expiration time (1 hour)
+        // Store OTP and expiration time in the database
+        await user.saveOtpToDatabase(email, otp, expiresAt); // Implement this function
 
-    // Store OTP and expiration time in the database
-    await user.saveOtpToDatabase(email, otp, expiresAt); // Implement this function
+        // Send the OTP to the user's email
+        await sendMail.sendVerificationEmail(email,email, `Your password reset code is: ${otp}`);
 
-    // Send the OTP to the user's email
-    await sendMail.sendVerificationEmail(email,email, `Your password reset code is: ${otp}`);
+        res.status(200).send('Password reset code sent to your email.');
+      }); // Assuming this function is implemented
 
-    res.status(200).send('Password reset code sent to your email.');
+    
+
+    
   } catch (error) {
     console.error('Error requesting password reset:', error);
     res.status(500).send('Internal server error.');

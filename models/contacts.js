@@ -1,3 +1,7 @@
+const moment = require('moment');
+require('moment-timezone');
+
+
 const db = require('../db/database');
 const user = require('../models/user')
 
@@ -20,7 +24,18 @@ exports.addContact = async (user_mail,name,email,phone,address,timezone, callbac
 };
 
 exports.getContacts = async (user_mail, filters = {}, sort = {},dateRange = {}, callback) => {
-    const user_row = await user.findUserByEmail(user_mail);
+    // const user_row = await user.getUserByEmail(user_mail);
+
+    // const user_row = await user.getUserByEmail(user_mail,()=>{});
+        const user_row = await new Promise((resolve, reject) => {
+        user.getUserByEmail(user_mail, (err, user) => {
+            if (err) {
+                reject(err); // Reject the promise if there's an error
+            } else {
+                resolve(user); // Resolve with the user row
+            }
+        });
+    });
     
     // Base query
     let query = `SELECT * FROM contacts WHERE user_id = ? AND is_deleted = 0`;
@@ -57,8 +72,12 @@ exports.getContacts = async (user_mail, filters = {}, sort = {},dateRange = {}, 
             return callback(err);
         }
 
+       console.log("filtered rows",rows);
+
         // Convert timestamps to user's timezone
-        const convertedRows = rows.map(row => {
+        const convertedRows = rows.map(row => { 
+            console.log("created_at", row.created_at);
+            console.log("filters",filters.timezone);
             return {
                 ...row,
                 created_at: moment.utc(row.created_at).tz(filters.timezone).format(), // Convert to user's timezone
@@ -92,8 +111,16 @@ exports.getContacts = async (user_mail, filters = {}, sort = {},dateRange = {}, 
 
 exports.updateContact = async (user_mail, contactId, updates, callback) => {
     try {
-        // Find the user by email to get the user_id
-        const user_row = await user.findUserByEmail(user_mail);
+        // const user_row = await user.getUserByEmail(user_mail,()=>{});
+        const user_row = await new Promise((resolve, reject) => {
+            user.getUserByEmail(user_mail, (err, user) => {
+                if (err) {
+                    reject(err); // Reject the promise if there's an error
+                } else {
+                    resolve(user); // Resolve with the user row
+                }
+            });
+        });
         
         // Check if user_row is found
         if (!user_row) {
@@ -145,7 +172,16 @@ exports.updateContact = async (user_mail, contactId, updates, callback) => {
 // };
 
 exports.deleteContact = async (user_mail, contactId, callback) => {
-    const user_row = await user.findUserByEmail(user_mail);
+    // const user_row = await user.getUserByEmail(user_mail,()=>{});
+        const user_row = await new Promise((resolve, reject) => {
+            user.getUserByEmail(user_mail, (err, user) => {
+                if (err) {
+                    reject(err); // Reject the promise if there's an error
+                } else {
+                    resolve(user); // Resolve with the user row
+                }
+            });
+        });
     if (!user_row) {
         return callback(new Error("User not found"), null); // Handle the case where the user is not found
     }
@@ -162,7 +198,15 @@ exports.deleteContact = async (user_mail, contactId, callback) => {
 };
 
 exports.batchProcessContacts = async (user_mail, contacts, callback) => {
-    const user_row = await user.findUserByEmail(user_mail);
+    const user_row = await new Promise((resolve, reject) => {
+            user.getUserByEmail(user_mail, (err, user) => {
+                if (err) {
+                    reject(err); // Reject the promise if there's an error
+                } else {
+                    resolve(user); // Resolve with the user row
+                }
+            });
+        });
 
         if (!user_row) {
             return callback(new Error("User not found"), null);
@@ -216,7 +260,15 @@ exports.batchProcessContacts = async (user_mail, contacts, callback) => {
 
 exports.getContactsByEmail = async (userMail) => {
     console.log("userMail",userMail);
-    const user_row = await user.findUserByEmail(userMail);
+    const user_row = await new Promise((resolve, reject) => {
+            user.getUserByEmail(userMail, (err, user) => {
+                if (err) {
+                    reject(err); // Reject the promise if there's an error
+                } else {
+                    resolve(user); // Resolve with the user row
+                }
+            });
+        });
     console.log("userRow",user_row);
 
     return new Promise((resolve, reject) => {
